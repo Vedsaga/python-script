@@ -1,6 +1,10 @@
 import sys
 import json
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 if len(sys.argv) != 2:
     print(f"Usage: python {sys.argv[0]} input_sql_file")
@@ -48,6 +52,10 @@ for table_def in table_defs:
         if line.startswith("CREATE INDEX"):
             index_name = line.split(" ")[2]
             indexes.append(index_name)
+        if line.startswith("CREATE UNIQUE INDEX"):
+            index_name = line.split(" ")[3]
+            indexes.append(index_name)
+
 
     # Generate JSON schema
     json_schema = {
@@ -91,11 +99,18 @@ for table_def in table_defs:
 
     # Append JSON schema to list of collections
     collections.append(json_schema)
+# Get databaseId from the environment variable
+databaseId = os.environ.get("DATABASE_ID")
+projectId = os.environ.get("PROJECT_ID")
+projectName = os.environ.get("PROJECT_NAME")
 
+# Set the databaseId for each collection
+for collection in collections:
+    collection["databaseId"] = databaseId
 # Create master JSON schema with list of collections
 master_schema = {
-    "projectId": "",
-    "projectName": "",
+    "projectId": projectId,
+    "projectName": projectName,
     "collections": collections
 }
 
@@ -103,7 +118,7 @@ master_schema = {
 output_file = f"{input_file.split('.')[0]}.json"
 with open(output_file, "w") as f:
     json.dump(master_schema, f, indent=4)
-    
+
 with open(output_file, 'r') as f:
     data = json.load(f)
 
@@ -114,27 +129,6 @@ for collection in data['collections']:
 with open(output_file, 'w') as f:
     json.dump(data, f, indent=4)
 
-# Load the original JSON schema
-with open("appwrite.json", "r") as f:
-    original_schema = json.load(f)
-
-# Load the new JSON schema
-with open(output_file, "r") as f:
-    new_schema = json.load(f)
-
-# Merge the collections
-original_collections = original_schema["collections"]
-new_collections = new_schema["collections"]
-merged_collections = original_collections + [new_collection for new_collection in new_collections if new_collection["name"] not in [collection["name"] for collection in original_collections]]
-
-# Update the original schema with the merged collections
-original_schema["collections"] = merged_collections
-
-# Write the updated schema to file
-with open("appwrite.json", "w") as f:
-    json.dump(original_schema, f, indent=4)
-
-# Delete the new schema file
-os.remove("new_appwrite.json")
-
+    
+# Print the output file name
 print(f"Merged JSON schema written to {output_file}")
