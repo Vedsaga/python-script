@@ -131,6 +131,10 @@ master_schema = {
 
 # Write master JSON schema to file
 output_file = f"{input_file.split('.')[0]}.json"
+
+# check if the file exists
+if os.path.exists(output_file):
+    os.remove(output_file) # delete the file
 with open(output_file, "w") as f:
     json.dump(master_schema, f, indent=4)
 
