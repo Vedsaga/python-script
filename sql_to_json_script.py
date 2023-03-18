@@ -45,16 +45,24 @@ for table_def in table_defs:
         not_null = "NOT NULL" in line
         columns.append((column_name, data_type, not_null))
 
-    # Extract index names
+    # Extract index names and column names
     indexes = []
+    indexed_columns = []
     for line in table_def.split("\n"):
         line = line.strip()
         if line.startswith("CREATE INDEX"):
             index_name = line.split(" ")[2]
-            indexes.append(index_name)
+            index_columns = line.split("(")[1].split(")")[0].split(",")
+            index_columns = [c.strip() for c in index_columns]
+            indexes.append((index_name, index_columns, 'key'))
+            indexed_columns += index_columns
         if line.startswith("CREATE UNIQUE INDEX"):
             index_name = line.split(" ")[3]
-            indexes.append(index_name)
+            index_columns = line.split("(")[1].split(")")[0].split(",")
+            index_columns = [c.strip() for c in index_columns]
+            indexes.append((index_name, index_columns, 'unique'))
+            indexed_columns += index_columns
+
 
 
     # Generate JSON schema
@@ -87,13 +95,13 @@ for table_def in table_defs:
         }
         json_schema["attributes"].append(attribute)
 
-    for index_name in indexes:
+    for index_name, index_columns, index_type in indexes:
         index = {
             "key": index_name,
-            "type": "unique",
+            "type": index_type,
             "status": "available",
-            "attributes": [],
-            "orders": []
+            "attributes": index_columns,
+            "orders": ["ASC"]
         }
         json_schema["indexes"].append(index)
 
@@ -123,6 +131,8 @@ with open(output_file, 'r') as f:
     data = json.load(f)
 
 for collection in data['collections']:
+    collection.pop("$createdAt", None)
+    collection.pop("$updatedAt", None)
     attributes = collection['attributes']
     collection['attributes'] = [attr for attr in attributes if attr['key'] not in ['created_at', 'last_update', 'ID',  'FOREIGN']]
 
