@@ -5,6 +5,12 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+# Get databaseId from the environment variable
+databaseId = os.environ.get("DATABASE_ID")
+projectId = os.environ.get("PROJECT_ID")
+projectName = os.environ.get("PROJECT_NAME")
+teamId = os.environ.get("TEAM_ID")
+
 
 if len(sys.argv) != 2:
     print(f"Usage: python {sys.argv[0]} input_sql_file")
@@ -70,7 +76,12 @@ for table_def in table_defs:
         "$id": table_name,
         "$createdAt": "",
         "$updatedAt": "",
-        "$permissions": [],
+        "$permissions": [
+    f"create(\"team:{teamId}\")",
+    f"read(\"team:{teamId}\")",
+    f"update(\"team:{teamId}\")",
+    f"delete(\"team:{teamId}\")"
+            ],
         "databaseId": "",
         "name": table_name,
         "enabled": True,
@@ -107,10 +118,6 @@ for table_def in table_defs:
 
     # Append JSON schema to list of collections
     collections.append(json_schema)
-# Get databaseId from the environment variable
-databaseId = os.environ.get("DATABASE_ID")
-projectId = os.environ.get("PROJECT_ID")
-projectName = os.environ.get("PROJECT_NAME")
 
 # Set the databaseId for each collection
 for collection in collections:
