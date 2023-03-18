@@ -11,6 +11,10 @@ projectId = os.environ.get("PROJECT_ID")
 projectName = os.environ.get("PROJECT_NAME")
 teamId = os.environ.get("TEAM_ID")
 
+# Check if any of the variables are empty or None
+if not all([databaseId, projectId, projectName, teamId]):
+    raise ValueError("One or more environment variables are empty or None")
+
 
 if len(sys.argv) != 2:
     print(f"Usage: python {sys.argv[0]} input_sql_file")
